@@ -16,6 +16,7 @@ dependencies:
   archive: ^3.3.5
   ffmpeg_kit_flutter_min_gpl: ^5.1.0
   package_info_plus: ^3.0.2
+  path:
 
 dev_dependencies:
   flutter_test:

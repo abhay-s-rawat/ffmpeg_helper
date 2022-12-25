@@ -1,4 +1,3 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:io';
 import 'package:archive/archive_io.dart';
 import 'package:dio/dio.dart';
@@ -29,7 +28,6 @@ class FFMpegWindowsConfigurator implements FFMpegConfigurator {
       ffmpegInstallationPath = path.join(appDocDir.path, appName, "ffmpeg");
       ffmpegBinDirectory = path.join(
           ffmpegInstallationPath!, "ffmpeg-master-latest-win64-gpl", "bin");
-      print(tempFolderPath);
     }
   }
 
@@ -97,7 +95,6 @@ class FFMpegWindowsConfigurator implements FFMpegConfigurator {
               'zipFile': tempZipFile.path,
               'targetPath': ffmpegInstallationPath,
             });
-            //await extractFileToDisk(tempZipFile.path, ffmpegInstallationPath!);
             onProgress?.call(FFMpegProgress(
               downloaded: 0,
               fileSize: 0,
@@ -131,7 +128,6 @@ class FFMpegWindowsConfigurator implements FFMpegConfigurator {
             'zipFile': tempZipFile.path,
             'targetPath': ffmpegInstallationPath,
           });
-          //await extractFileToDisk(tempZipFile.path, ffmpegInstallationPath!);
           onProgress?.call(FFMpegProgress(
             downloaded: 0,
             fileSize: 0,

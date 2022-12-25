@@ -71,8 +71,6 @@ class _HomePageState extends State<HomePage> {
     bool success = await ffmpeg.ffMpegConfigurator!.setupFFMpeg(
       onProgress: (FFMpegProgress progress) {
         downloadProgress.value = progress;
-        /* print(
-            'downloading ffmpeg: ${((received / total) * 100).toStringAsFixed(2)}'); */
       },
     );
     setState(() {
@@ -174,7 +172,6 @@ class _HomePageState extends State<HomePage> {
                 child: ValueListenableBuilder(
                   valueListenable: downloadProgress,
                   builder: (BuildContext context, FFMpegProgress value, _) {
-                    //print(value.downloaded / value.fileSize);
                     double? prog;
                     if ((value.downloaded != 0) && (value.fileSize != 0)) {
                       prog = value.downloaded / value.fileSize;

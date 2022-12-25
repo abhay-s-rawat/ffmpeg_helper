@@ -47,7 +47,6 @@ class FFMpegCommand {
     commands.addAll(argsList);
     commands.addAll(filtersList);
     commands.add(outputFilepath);
-    // print('command=> ' + commands.join('\t'));
     return commands;
   }
 }
