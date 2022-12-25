@@ -4,8 +4,8 @@
 
 # ffmpeg_helper
 FFmpeg commands helper for flutter with support for setup on windows platform.
-
-# This uses ffmpeg_kit_flutter_min_gpl package for android/ios/macos
+This uses ffmpeg_kit_flutter_min_gpl package for android/ios/macos
+Info was taken from ffmpeg_cli and recreated it as that project was stale.
 ```dart
 // Initialize
   late FFMpegHelper ffmpeg;
