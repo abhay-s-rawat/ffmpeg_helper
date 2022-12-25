@@ -4,6 +4,7 @@
 
 # ffmpeg_helper
 FFmpeg commands helper for flutter with support for setup on windows platform.
+Create thumbnail and run ffprobe on all platforms except WEB.
 This uses ffmpeg_kit_flutter_min_gpl package for android/ios/macos
 Info was taken from ffmpeg_cli and recreated it as that project was stale.
 ```dart
@@ -54,6 +55,34 @@ final FFMpegCommand cliCommand = FFMpegCommand(
       },
     );
 ```
+
+# Thumbnail creator
+```
+// use ffmpeg.getThumbnailFileAsync() to get session
+Future<FFMpegHelperSession> getThumbnailFileAsync({
+    required String videoPath,
+    required Duration fromDuration,
+    required String outputPath,
+    String? ffmpegPath,
+    FilterGraph? filterGraph,
+    int qualityPercentage = 100,
+    Function(Statistics statistics)? statisticsCallback,
+    Function(File? outputFile)? onComplete,
+    FFMpegConfigurator? ffMpegConfigurator,
+  })
+// use ffmpeg.getThumbnailFileSync() to get thumbnail file
+Future<File?> getThumbnailFileSync({
+    required String videoPath,
+    required Duration fromDuration,
+    required String outputPath,
+    String? ffmpegPath,
+    FilterGraph? filterGraph,
+    int qualityPercentage = 100,
+    Function(Statistics statistics)? statisticsCallback,
+    Function(File? outputFile)? onComplete,
+    FFMpegConfigurator? ffMpegConfigurator,
+  })
+```
 # Run FFMpeg and get session so that user can cancel it later.
 ```
 Future<FFMpegHelperSession> runAsync(
@@ -77,6 +106,7 @@ Future<MediaInformation?> runProbe(String filePath)
 # Setup FFMPEG for windows
 ```
 // check on windows
+// bool isPresent = ffmpeg.checkFFMpeg();
 Future<void> checkFFMpeg() async {
     bool present = await ffmpeg.ffMpegConfigurator!.isFFMpegPresent();
     ffmpegPresent = present;

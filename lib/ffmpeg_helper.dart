@@ -14,7 +14,7 @@ export 'abstract_classes/ffmpeg_filter_abstract.dart';
 export 'ffmpeg/ffmpeg_filter_chain.dart';
 export 'ffmpeg/ffmpeg_filter_graph.dart';
 export 'ffmpeg/ffmpeg_input.dart';
-export 'ffmpeg/ffmpeg_helper_class.dart';
+export 'helpers/ffmpeg_helper_class.dart';
 export 'ffmpeg/ffmpeg_stream.dart';
 
 // FFMPEG filters
@@ -47,7 +47,6 @@ export 'ffmpeg/args/remove_video_arg.dart';
 export 'ffmpeg/args/video_bitrate_arg.dart';
 
 // Helpers
-export 'helpers/create_thumbnail.dart';
 export 'helpers/helper_sessions.dart';
 
 //
