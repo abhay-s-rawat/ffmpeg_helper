@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:ffmpeg_helper/ffmpeg_helper.dart';
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/material.dart' as material;
 import 'package:flutter/foundation.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
       await windowManager.setSkipTaskbar(false);
     });
   }
+  await FFMpegHelper.instance.initialize();
   runApp(const MyApp());
 }
 

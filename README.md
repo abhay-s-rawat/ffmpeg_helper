@@ -8,162 +8,169 @@ Create thumbnail and run ffprobe on all platforms except WEB.
 This uses ffmpeg_kit_flutter_min_gpl package for android/ios/macos
 Info was taken from ffmpeg_cli and recreated it as that project was stale.
 ```dart
-// Initialize
-  late FFMpegHelper ffmpeg;
-
-  @override
-  void initState() {
-    super.initState();
-    ffmpeg = FFMpegHelper(ffMpegConfigurator: FFMpegWindowsConfigurator());
-  }
+// Initialize in main
+  await FFMpegHelper.instance.initialize(); // This is a singleton instance
+  // FFMpegHelper ffmpeg = FFMpegHelpe.instance; // use like this
+  runApp(const MyApp());
 ```
 ```
 // Command builder
 // Use prebuilt args and filters or create custom ones
 final FFMpegCommand cliCommand = FFMpegCommand(
-      inputs: [
-        FFMpegInput.asset(selectedFile!.path),
-      ],
-      args: [
-        const LogLevelArgument(LogLevel.info),
-        const OverwriteArgument(),
-        const TrimArgument(
-          start: Duration(seconds: 0),
-          end: Duration(seconds: 10),
-        ),
-      ],
-      filterGraph: FilterGraph(
-        chains: [
-          FilterChain(
-            inputs: [],
-            filters: [
-              ScaleFilter(
-                height: 300,
-                width: -2,
-              ),
-            ],
-            outputs: [],
+  inputs: [
+    FFMpegInput.asset(selectedFile!.path),
+  ],
+  args: [
+    const LogLevelArgument(LogLevel.info),
+    const OverwriteArgument(),
+    const TrimArgument(
+      start: Duration(seconds: 0),
+      end: Duration(seconds: 10),
+    ),
+  ],
+  filterGraph: FilterGraph(
+    chains: [
+      FilterChain(
+        inputs: [],
+        filters: [
+          ScaleFilter(
+            height: 300,
+            width: -2,
           ),
         ],
+        outputs: [],
       ),
-      outputFilepath: path.join(appDocDir.path, "ffmpegtest.mp4"),
-    );
-    FFMpegHelperSession session = await ffmpeg.runAsync(
-      cliCommand,
-      statisticsCallback: (Statistics statistics) {
-        print('bitrate: ${statistics.getBitrate()}');
-      },
-    );
+    ],
+  ),
+  outputFilepath: path.join(appDocDir.path, "ffmpegtest.mp4"),
+);
+FFMpegHelperSession session = await ffmpeg.runAsync(
+  cliCommand,
+  statisticsCallback: (Statistics statistics) {
+    print('bitrate: ${statistics.getBitrate()}');
+  },
+);
 ```
 
 # Thumbnail creator
 ```
 // use ffmpeg.getThumbnailFileAsync() to get session
 Future<FFMpegHelperSession> getThumbnailFileAsync({
-    required String videoPath,
-    required Duration fromDuration,
-    required String outputPath,
-    String? ffmpegPath,
-    FilterGraph? filterGraph,
-    int qualityPercentage = 100,
-    Function(Statistics statistics)? statisticsCallback,
-    Function(File? outputFile)? onComplete,
-    FFMpegConfigurator? ffMpegConfigurator,
-  })
+  required String videoPath,
+  required Duration fromDuration,
+  required String outputPath,
+  String? ffmpegPath,
+  FilterGraph? filterGraph,
+  int qualityPercentage = 100,
+  Function(Statistics statistics)? statisticsCallback,
+  Function(File? outputFile)? onComplete,
+  FFMpegConfigurator? ffMpegConfigurator,
+})
 // use ffmpeg.getThumbnailFileSync() to get thumbnail file
 Future<File?> getThumbnailFileSync({
-    required String videoPath,
-    required Duration fromDuration,
-    required String outputPath,
-    String? ffmpegPath,
-    FilterGraph? filterGraph,
-    int qualityPercentage = 100,
-    Function(Statistics statistics)? statisticsCallback,
-    Function(File? outputFile)? onComplete,
-    FFMpegConfigurator? ffMpegConfigurator,
-  })
+  required String videoPath,
+  required Duration fromDuration,
+  required String outputPath,
+  String? ffmpegPath,
+  FilterGraph? filterGraph,
+  int qualityPercentage = 100,
+  Function(Statistics statistics)? statisticsCallback,
+  Function(File? outputFile)? onComplete,
+  FFMpegConfigurator? ffMpegConfigurator,
+})
 ```
 # Run FFMpeg and get session so that user can cancel it later.
 ```
 Future<FFMpegHelperSession> runAsync(
-    FFMpegCommand command, {
-    Function(Statistics statistics)? statisticsCallback,
-    Function(File? outputFile)? onComplete,
-    Function(Log)? logCallback,
-  })
+  FFMpegCommand command, {
+  Function(Statistics statistics)? statisticsCallback,
+  Function(File? outputFile)? onComplete,
+  Function(Log)? logCallback,
+})
 ```
 # Run FFMpeg as future.
 ```
 Future<File?> runSync(
-    FFMpegCommand command, {
-    Function(Statistics statistics)? statisticsCallback,
-  })
+  FFMpegCommand command, {
+  Function(Statistics statistics)? statisticsCallback,
+})
 ```
 # Run ffprobe
 ```
 Future<MediaInformation?> runProbe(String filePath)
 ```
+# Setup FFMPEG for Linux
+```
+sudo apt-get install ffmpeg
+OR
+sudo snap install ffmpeg
+depends on linux distro
+```
 # Setup FFMPEG for windows
 ```
-// check on windows
-// bool isPresent = ffmpeg.checkFFMpeg();
-Future<void> checkFFMpeg() async {
-    bool present = await ffmpeg.ffMpegConfigurator!.isFFMpegPresent();
-    ffmpegPresent = present;
-    if (present) {
-      print('ffmpeg available');
-    } else {
-      print('ffmpeg needs to setup');
-    }
-    setState(() {});
-  }
-```
-```
-// Download on windows if ffmpeg is present (only check for windows)
 Future<void> downloadFFMpeg() async {
-    await ffmpeg.ffMpegConfigurator!.initialize();
-    bool success = await ffmpeg.ffMpegConfigurator!.setupFFMpeg(
-      onProgress: (FFMpegProgress progress) {
-        downloadProgress.value = progress;
-        /* print(
-            'downloading ffmpeg: ${((received / total) * 100).toStringAsFixed(2)}'); */
-      },
-    );
-    setState(() {
-      ffmpegPresent = success;
-    });
+    if (Platform.isWindows) {
+      bool success = await ffmpeg.setupFFMpegOnWindows(
+        onProgress: (FFMpegProgress progress) {
+          downloadProgress.value = progress;
+        },
+      );
+      setState(() {
+        ffmpegPresent = success;
+      });
+    } else if (Platform.isLinux) {
+      // show dialog box
+      await Dialogs.materialDialog(
+          color: Colors.white,
+          msg:
+              'FFmpeg installation required by user.\nsudo apt-get install ffmpeg\nsudo snap install ffmpeg',
+          title: 'Install FFMpeg',
+          context: context,
+          actions: [
+            IconsButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              text: 'Ok',
+              iconData: Icons.done,
+              color: Colors.blue,
+              textStyle: const TextStyle(color: Colors.white),
+              iconColor: Colors.white,
+            ),
+          ]);
+    }
   }
 ```
 ```
 // check setup progress on windows
 // On windows if ffmpeg is not present it will download official zip file and extract on doc directory of app.
 SizedBox(
-                width: 300,
-                child: ValueListenableBuilder(
-                  valueListenable: downloadProgress,
-                  builder: (BuildContext context, FFMpegProgress value, _) {
-                    //print(value.downloaded / value.fileSize);
-                    double? prog;
-                    if ((value.downloaded != 0) && (value.fileSize != 0)) {
-                      prog = value.downloaded / value.fileSize;
-                    } else {
-                      prog = 0;
-                    }
-                    if (value.phase == FFMpegProgressPhase.decompressing) {
-                      prog = null;
-                    }
-                    if (value.phase == FFMpegProgressPhase.inactive) {
-                      return const SizedBox.shrink();
-                    }
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(value.phase.name),
-                        const SizedBox(height: 5),
-                        LinearProgressIndicator(value: prog),
-                      ],
-                    );
-                  },
-                ),
-              ),
+  width: 300,
+  child: ValueListenableBuilder(
+    valueListenable: downloadProgress,
+    builder: (BuildContext context, FFMpegProgress value, _) {
+      //print(value.downloaded / value.fileSize);
+      double? prog;
+      if ((value.downloaded != 0) && (value.fileSize != 0)) {
+        prog = value.downloaded / value.fileSize;
+      } else {
+        prog = 0;
+      }
+      if (value.phase == FFMpegProgressPhase.decompressing) {
+        prog = null;
+      }
+      if (value.phase == FFMpegProgressPhase.inactive) {
+        return const SizedBox.shrink();
+      }
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(value.phase.name),
+          const SizedBox(height: 5),
+          LinearProgressIndicator(value: prog),
+        ],
+      );
+    },
+  ),
+),
 ```

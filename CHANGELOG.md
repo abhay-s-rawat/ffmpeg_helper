@@ -6,3 +6,7 @@
 
 * Minor changes
 
+## 1.0.0
+
+* Major changes. Linux support included.
+

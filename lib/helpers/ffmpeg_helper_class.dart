@@ -1,19 +1,86 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:archive/archive_io.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart';
+
 import '../ffmpeg_helper.dart';
 import 'package:path/path.dart' as path;
 
 class FFMpegHelper {
-  final FFMpegConfigurator? ffMpegConfigurator;
-  FFMpegHelper({this.ffMpegConfigurator});
+  static final FFMpegHelper _singleton = FFMpegHelper._internal();
+  factory FFMpegHelper() => _singleton;
+  FFMpegHelper._internal();
+  static FFMpegHelper get instance => _singleton;
+
+  //
+  final String _ffmpegUrl =
+      "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
+  String? _tempFolderPath;
+  String? _ffmpegBinDirectory;
+  String? _ffmpegInstallationPath;
+
+  Future<void> initialize() async {
+    if (Platform.isWindows) {
+      PackageInfo packageInfo = await PackageInfo.fromPlatform();
+      String appName = packageInfo.appName;
+      Directory tempDir = await getTemporaryDirectory();
+      _tempFolderPath = path.join(tempDir.path, "ffmpeg");
+      Directory appDocDir = await getApplicationDocumentsDirectory();
+      _ffmpegInstallationPath = path.join(appDocDir.path, appName, "ffmpeg");
+      _ffmpegBinDirectory = path.join(
+          _ffmpegInstallationPath!, "ffmpeg-master-latest-win64-gpl", "bin");
+    }
+  }
+
+  Future<bool> isFFMpegPresent() async {
+    if (Platform.isWindows) {
+      if ((_ffmpegBinDirectory == null) || (_tempFolderPath == null)) {
+        await initialize();
+      }
+      File ffmpeg = File(path.join(_ffmpegBinDirectory!, "ffmpeg.exe"));
+      File ffprobe = File(path.join(_ffmpegBinDirectory!, "ffprobe.exe"));
+      if ((await ffmpeg.exists()) && (await ffprobe.exists())) {
+        return true;
+      } else {
+        return false;
+      }
+    } else if (Platform.isLinux) {
+      try {
+        Process process = await Process.start(
+          'ffmpeg',
+          ['--help'],
+        );
+        return await process.exitCode == ReturnCode.success;
+      } catch (e) {
+        return false;
+      }
+    } else {
+      return true;
+    }
+  }
+
+  static Future<void> extractZipFileIsolate(Map data) async {
+    try {
+      String? zipFilePath = data['zipFile'];
+      String? targetPath = data['targetPath'];
+      if ((zipFilePath != null) && (targetPath != null)) {
+        await extractFileToDisk(zipFilePath, targetPath);
+      }
+    } catch (e) {
+      return;
+    }
+  }
 
   Future<FFMpegHelperSession> runAsync(
     FFMpegCommand command, {
     Function(Statistics statistics)? statisticsCallback,
     Function(File? outputFile)? onComplete,
   }) async {
-    if (Platform.isWindows) {
+    if (Platform.isWindows || Platform.isLinux) {
       return _runAsyncOnWindows(
         command,
         statisticsCallback: statisticsCallback,
@@ -84,7 +151,7 @@ class FFMpegHelper {
     FFMpegCommand command, {
     Function(Statistics statistics)? statisticsCallback,
   }) async {
-    if (Platform.isWindows) {
+    if (Platform.isWindows || Platform.isLinux) {
       return _runSyncOnWindows(
         command,
         statisticsCallback: statisticsCallback,
@@ -102,9 +169,8 @@ class FFMpegHelper {
     Function(Statistics statistics)? statisticsCallback,
   }) async {
     String ffmpeg = 'ffmpeg';
-    if ((ffMpegConfigurator != null) &&
-        (ffMpegConfigurator!.ffmpegBinDirectory != null)) {
-      ffmpeg = path.join(ffMpegConfigurator!.ffmpegBinDirectory!, "ffmpeg.exe");
+    if ((_ffmpegBinDirectory != null) && (Platform.isWindows)) {
+      ffmpeg = path.join(_ffmpegBinDirectory!, "ffmpeg.exe");
     }
     Process process = await Process.start(
       ffmpeg,
@@ -183,7 +249,7 @@ class FFMpegHelper {
   }
 
   Future<MediaInformation?> runProbe(String filePath) async {
-    if (Platform.isWindows) {
+    if (Platform.isWindows || Platform.isLinux) {
       return _runProbeOnWindows(filePath);
     } else {
       return _runProbeOnNonWindows(filePath);
@@ -216,10 +282,8 @@ class FFMpegHelper {
 
   Future<MediaInformation?> _runProbeOnWindows(String filePath) async {
     String ffprobe = 'ffprobe';
-    if ((ffMpegConfigurator != null) &&
-        (ffMpegConfigurator!.ffmpegBinDirectory != null)) {
-      ffprobe =
-          path.join(ffMpegConfigurator!.ffmpegBinDirectory!, "ffprobe.exe");
+    if (((_ffmpegBinDirectory != null) && (Platform.isWindows))) {
+      ffprobe = path.join(_ffmpegBinDirectory!, "ffprobe.exe");
     }
     final result = await Process.run(ffprobe, [
       '-v',
@@ -257,7 +321,6 @@ class FFMpegHelper {
     int qualityPercentage = 100,
     Function(Statistics statistics)? statisticsCallback,
     Function(File? outputFile)? onComplete,
-    FFMpegConfigurator? ffMpegConfigurator,
   }) async {
     int quality = 1;
     if ((qualityPercentage > 0) && (qualityPercentage < 100)) {
@@ -275,8 +338,7 @@ class FFMpegHelper {
       outputFilepath: outputPath,
       filterGraph: filterGraph,
     );
-    FFMpegHelperSession session =
-        await FFMpegHelper(ffMpegConfigurator: ffMpegConfigurator).runAsync(
+    FFMpegHelperSession session = await runAsync(
       cliCommand,
       onComplete: onComplete,
       statisticsCallback: statisticsCallback,
@@ -293,7 +355,6 @@ class FFMpegHelper {
     int qualityPercentage = 100,
     Function(Statistics statistics)? statisticsCallback,
     Function(File? outputFile)? onComplete,
-    FFMpegConfigurator? ffMpegConfigurator,
   }) async {
     int quality = 1;
     if ((qualityPercentage > 0) && (qualityPercentage < 100)) {
@@ -311,11 +372,113 @@ class FFMpegHelper {
       outputFilepath: outputPath,
       filterGraph: filterGraph,
     );
-    File? session =
-        await FFMpegHelper(ffMpegConfigurator: ffMpegConfigurator).runSync(
+    File? session = await runSync(
       cliCommand,
       statisticsCallback: statisticsCallback,
     );
     return session;
+  }
+
+  Future<bool> setupFFMpegOnWindows({
+    CancelToken? cancelToken,
+    void Function(FFMpegProgress progress)? onProgress,
+    Map<String, dynamic>? queryParameters,
+  }) async {
+    if (Platform.isWindows) {
+      if ((_ffmpegBinDirectory == null) || (_tempFolderPath == null)) {
+        await initialize();
+      }
+      Directory tempDir = Directory(_tempFolderPath!);
+      if (await tempDir.exists() == false) {
+        await tempDir.create(recursive: true);
+      }
+      Directory installationDir = Directory(_ffmpegInstallationPath!);
+      if (await installationDir.exists() == false) {
+        await installationDir.create(recursive: true);
+      }
+      final String ffmpegZipPath = path.join(_tempFolderPath!, "ffmpeg.zip");
+      final File tempZipFile = File(ffmpegZipPath);
+      if (await tempZipFile.exists() == false) {
+        try {
+          Dio dio = Dio();
+          Response response = await dio.download(
+            _ffmpegUrl,
+            ffmpegZipPath,
+            cancelToken: cancelToken,
+            onReceiveProgress: (int received, int total) {
+              onProgress?.call(FFMpegProgress(
+                downloaded: received,
+                fileSize: total,
+                phase: FFMpegProgressPhase.downloading,
+              ));
+            },
+            queryParameters: queryParameters,
+          );
+          if (response.statusCode == HttpStatus.ok) {
+            onProgress?.call(FFMpegProgress(
+              downloaded: 0,
+              fileSize: 0,
+              phase: FFMpegProgressPhase.decompressing,
+            ));
+            await compute(extractZipFileIsolate, {
+              'zipFile': tempZipFile.path,
+              'targetPath': _ffmpegInstallationPath,
+            });
+            onProgress?.call(FFMpegProgress(
+              downloaded: 0,
+              fileSize: 0,
+              phase: FFMpegProgressPhase.inactive,
+            ));
+            return true;
+          } else {
+            onProgress?.call(FFMpegProgress(
+              downloaded: 0,
+              fileSize: 0,
+              phase: FFMpegProgressPhase.inactive,
+            ));
+            return false;
+          }
+        } catch (e) {
+          onProgress?.call(FFMpegProgress(
+            downloaded: 0,
+            fileSize: 0,
+            phase: FFMpegProgressPhase.inactive,
+          ));
+          return false;
+        }
+      } else {
+        onProgress?.call(FFMpegProgress(
+          downloaded: 0,
+          fileSize: 0,
+          phase: FFMpegProgressPhase.decompressing,
+        ));
+        try {
+          await compute(extractZipFileIsolate, {
+            'zipFile': tempZipFile.path,
+            'targetPath': _ffmpegInstallationPath,
+          });
+          onProgress?.call(FFMpegProgress(
+            downloaded: 0,
+            fileSize: 0,
+            phase: FFMpegProgressPhase.inactive,
+          ));
+          return true;
+        } catch (e) {
+          onProgress?.call(FFMpegProgress(
+            downloaded: 0,
+            fileSize: 0,
+            phase: FFMpegProgressPhase.inactive,
+          ));
+          return false;
+        }
+      }
+    } else {
+      onProgress?.call(FFMpegProgress(
+        downloaded: 0,
+        fileSize: 0,
+        phase: FFMpegProgressPhase.inactive,
+      ));
+      return true;
+    }
   }
 }

@@ -2,8 +2,10 @@ import 'dart:io';
 import 'package:ffmpeg_helper/ffmpeg_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:material_dialogs/widgets/buttons/icon_button.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
+import 'package:material_dialogs/material_dialogs.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,7 +15,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  File? selectedFile;
+  File selectedFile =
+      File(path.join('assets', 'Drone Footage of High Rises in a City.mp4'));
   bool ffmpegPresent = false;
   ValueNotifier<FFMpegProgress> downloadProgress =
       ValueNotifier<FFMpegProgress>(FFMpegProgress(
@@ -21,13 +24,7 @@ class _HomePageState extends State<HomePage> {
     fileSize: 0,
     phase: FFMpegProgressPhase.inactive,
   ));
-  late FFMpegHelper ffmpeg;
-
-  @override
-  void initState() {
-    super.initState();
-    ffmpeg = FFMpegHelper(ffMpegConfigurator: FFMpegWindowsConfigurator());
-  }
+  FFMpegHelper ffmpeg = FFMpegHelper.instance;
 
   Future<void> selectVideoFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
@@ -42,8 +39,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> runFFprobe() async {
-    if (selectedFile == null) return;
-    MediaInformation? res = await ffmpeg.runProbe(selectedFile!.path);
+    MediaInformation? res = await ffmpeg.runProbe(selectedFile.path);
     if (res != null) {
       print('${res.getBitrate()}');
       for (StreamInformation stream in res.getStreams()) {
@@ -56,7 +52,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> checkFFMpeg() async {
-    bool present = await ffmpeg.ffMpegConfigurator!.isFFMpegPresent();
+    bool present = await ffmpeg.isFFMpegPresent();
     ffmpegPresent = present;
     if (present) {
       print('ffmpeg available');
@@ -67,23 +63,44 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> downloadFFMpeg() async {
-    await ffmpeg.ffMpegConfigurator!.initialize();
-    bool success = await ffmpeg.ffMpegConfigurator!.setupFFMpeg(
-      onProgress: (FFMpegProgress progress) {
-        downloadProgress.value = progress;
-      },
-    );
-    setState(() {
-      ffmpegPresent = success;
-    });
+    if (Platform.isWindows) {
+      bool success = await ffmpeg.setupFFMpegOnWindows(
+        onProgress: (FFMpegProgress progress) {
+          downloadProgress.value = progress;
+        },
+      );
+      setState(() {
+        ffmpegPresent = success;
+      });
+    } else if (Platform.isLinux) {
+      // show dialog box
+      await Dialogs.materialDialog(
+          color: Colors.white,
+          msg:
+              'FFmpeg installation required by user.\nsudo apt-get install ffmpeg\nsudo snap install ffmpeg',
+          title: 'Install FFMpeg',
+          context: context,
+          actions: [
+            IconsButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              text: 'Ok',
+              iconData: Icons.done,
+              color: Colors.blue,
+              textStyle: const TextStyle(color: Colors.white),
+              iconColor: Colors.white,
+            ),
+          ]);
+    }
   }
 
   Future<void> runFFMpeg() async {
-    if ((selectedFile == null) || (ffmpegPresent == false)) return;
+    if (ffmpegPresent == false) return;
     Directory appDocDir = await getApplicationDocumentsDirectory();
     final FFMpegCommand cliCommand = FFMpegCommand(
       inputs: [
-        FFMpegInput.asset(selectedFile!.path),
+        FFMpegInput.asset(selectedFile.path),
       ],
       args: [
         const LogLevelArgument(LogLevel.info),
@@ -109,12 +126,13 @@ class _HomePageState extends State<HomePage> {
       ),
       outputFilepath: path.join(appDocDir.path, "ffmpegtest.mp4"),
     );
-    FFMpegHelperSession session = await ffmpeg.runAsync(
+    File? session = await ffmpeg.runSync(
       cliCommand,
       statisticsCallback: (Statistics statistics) {
         print('bitrate: ${statistics.getBitrate()}');
       },
     );
+    print("success=========> ${session != null}");
   }
 
   @override
@@ -153,7 +171,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 const SizedBox(height: 20),
                 TextButton.icon(
-                  label: const Text('Setup FFMpeg on windows'),
+                  label: const Text('Setup FFMpeg'),
                   icon: const Icon(Icons.download),
                   onPressed: downloadFFMpeg,
                 ),

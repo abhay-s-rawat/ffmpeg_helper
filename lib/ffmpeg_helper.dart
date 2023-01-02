@@ -6,8 +6,6 @@ export 'time.dart';
 
 // FFMPEG
 export 'abstract_classes/ffmpeg_arguments_abstract.dart';
-export 'abstract_classes/ffmpeg_configurator_abstract.dart';
-export 'ffmpeg/ffmpeg_windows_configurator.dart';
 export 'ffmpeg/ffmpeg_command.dart';
 export 'ffmpeg/ffmpeg_command_builder.dart';
 export 'abstract_classes/ffmpeg_filter_abstract.dart';
@@ -47,6 +45,8 @@ export 'ffmpeg/args/remove_video_arg.dart';
 export 'ffmpeg/args/video_bitrate_arg.dart';
 
 // Helpers
+export 'helpers/ffmpeg_helper_class.dart';
+export 'helpers/helper_progress.dart';
 export 'helpers/helper_sessions.dart';
 
 //
