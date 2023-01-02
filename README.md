@@ -13,7 +13,7 @@ Info was taken from ffmpeg_cli and recreated it as that project was stale.
   // FFMpegHelper ffmpeg = FFMpegHelpe.instance; // use like this
   runApp(const MyApp());
 ```
-```
+```dart
 // Command builder
 // Use prebuilt args and filters or create custom ones
 final FFMpegCommand cliCommand = FFMpegCommand(
@@ -53,7 +53,7 @@ FFMpegHelperSession session = await ffmpeg.runAsync(
 ```
 
 # Thumbnail creator
-```
+```dart
 // use ffmpeg.getThumbnailFileAsync() to get session
 Future<FFMpegHelperSession> getThumbnailFileAsync({
   required String videoPath,
@@ -80,7 +80,7 @@ Future<File?> getThumbnailFileSync({
 })
 ```
 # Run FFMpeg and get session so that user can cancel it later.
-```
+```dart
 Future<FFMpegHelperSession> runAsync(
   FFMpegCommand command, {
   Function(Statistics statistics)? statisticsCallback,
@@ -89,14 +89,14 @@ Future<FFMpegHelperSession> runAsync(
 })
 ```
 # Run FFMpeg as future.
-```
+```dart
 Future<File?> runSync(
   FFMpegCommand command, {
   Function(Statistics statistics)? statisticsCallback,
 })
 ```
 # Run ffprobe
-```
+```dart
 Future<MediaInformation?> runProbe(String filePath)
 ```
 # Setup FFMPEG for Linux
@@ -107,7 +107,7 @@ sudo snap install ffmpeg
 depends on linux distro
 ```
 # Setup FFMPEG for windows
-```
+```dart
 Future<void> downloadFFMpeg() async {
     if (Platform.isWindows) {
       bool success = await ffmpeg.setupFFMpegOnWindows(
@@ -141,7 +141,7 @@ Future<void> downloadFFMpeg() async {
     }
   }
 ```
-```
+```dart
 // check setup progress on windows
 // On windows if ffmpeg is not present it will download official zip file and extract on doc directory of app.
 SizedBox(
