@@ -135,6 +135,21 @@ class _HomePageState extends State<HomePage> {
     print("success=========> ${session != null}");
   }
 
+  Future<void> createThumbNail() async {
+    Directory tempDir = await getTemporaryDirectory();
+    String fname = path.join(tempDir.path, 'thumb.jpg');
+    File? thumb = await ffmpeg.getThumbnailFileSync(
+      videoPath: selectedFile.path,
+      fromDuration: const Duration(seconds: 5),
+      outputPath: fname,
+    );
+    if (thumb != null) {
+      print('thumb success : $fname');
+    } else {
+      print('thumb failure : $fname');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -182,6 +197,12 @@ class _HomePageState extends State<HomePage> {
                   label: const Text('Process Video File'),
                   icon: const Icon(Icons.run_circle),
                   onPressed: runFFMpeg,
+                ),
+                const SizedBox(height: 20),
+                TextButton.icon(
+                  label: const Text('Generate Thumbnail'),
+                  icon: const Icon(Icons.pie_chart),
+                  onPressed: createThumbNail,
                 ),
               ],
               const SizedBox(height: 20),
