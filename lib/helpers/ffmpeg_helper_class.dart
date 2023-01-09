@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+
 import 'package:archive/archive_io.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 import '../ffmpeg_helper.dart';
-import 'package:path/path.dart' as path;
 
 class FFMpegHelper {
   static final FFMpegHelper _singleton = FFMpegHelper._internal();
@@ -178,30 +179,41 @@ class FFMpegHelper {
     );
     process.stdout.transform(utf8.decoder).listen((String event) {
       List<String> data = event.split("\n");
+      Map<String, dynamic> temp = {};
       for (String element in data) {
         List<String> kv = element.split("=");
-        Map<String, dynamic> temp = {};
         if (kv.length == 2) {
           temp[kv.first] = kv.last;
         }
-        if (temp.isNotEmpty) {
-          try {
-            statisticsCallback?.call(Statistics(
-              process.pid,
-              int.parse(temp['frame']),
-              double.parse(temp['fps']),
-              double.parse(temp['stream_0_0_q']),
-              int.parse(temp['total_size']),
-              int.parse(temp['out_time_ms']),
-              double.parse(temp['bitrate']),
-              double.parse(temp['speed']),
-            ));
-          } catch (e) {}
+      }
+      if (temp.isNotEmpty) {
+        try {
+          statisticsCallback?.call(Statistics(
+            process.pid,
+            int.tryParse(temp['frame']) ?? 0,
+            double.tryParse(temp['fps']) ?? 0.0,
+            double.tryParse(temp['stream_0_0_q']) ?? 0.0,
+            int.tryParse(temp['total_size']) ?? 0,
+            int.tryParse(temp['out_time_us']) ?? 0,
+            // 2189.6kbits/s => 2189.6
+            double.tryParse(
+                    temp['bitrate']?.replaceAll(RegExp('[a-z/]'), '')) ??
+                0.0,
+            // 2.15x => 2.15
+            double.tryParse(temp['speed']?.replaceAll(RegExp('[a-z/]'), '')) ??
+                0.0,
+          ));
+        } catch (e) {
+          if (kDebugMode) {
+            print(e);
+          }
         }
       }
     });
     process.stderr.transform(utf8.decoder).listen((event) {
-      print("err: $event");
+      if (kDebugMode) {
+        print("stderr: $event");
+      }
     });
     return process;
   }

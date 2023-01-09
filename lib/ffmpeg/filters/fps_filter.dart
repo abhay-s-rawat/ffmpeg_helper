@@ -1,5 +1,4 @@
-import '../../time.dart';
-import '../../abstract_classes/ffmpeg_filter_abstract.dart';
+import 'package:ffmpeg_helper/ffmpeg_helper.dart';
 
 /// Converts the input video stream to the specified constant frame rate
 /// by duplicating or dropping frames as necessary.
