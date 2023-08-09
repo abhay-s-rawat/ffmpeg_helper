@@ -8,7 +8,7 @@ import Foundation
 import ffmpeg_kit_flutter_min_gpl
 import flutter_acrylic
 import package_info_plus
-import path_provider_macos
+import path_provider_foundation
 import screen_retriever
 import window_manager
 

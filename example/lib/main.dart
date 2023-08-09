@@ -51,20 +51,20 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return FluentApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
+      theme: FluentThemeData(
         accentColor: Colors.purple,
         visualDensity: VisualDensity.standard,
         focusTheme: FocusThemeData(
-          glowFactor: is10footScreen() ? 2.0 : 0.0,
+          glowFactor: is10footScreen(context) ? 2.0 : 0.0,
         ),
       ),
       themeMode: ThemeMode.system,
       color: Colors.green,
-      darkTheme: ThemeData(
+      darkTheme: FluentThemeData(
         brightness: Brightness.dark,
         visualDensity: VisualDensity.standard,
         focusTheme: FocusThemeData(
-          glowFactor: is10footScreen() ? 2.0 : 0.0,
+          glowFactor: is10footScreen(context) ? 2.0 : 0.0,
         ),
       ),
       home: NavigationView(
@@ -110,7 +110,7 @@ class WindowButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ThemeData theme = FluentTheme.of(context);
+    final FluentThemeData theme = FluentTheme.of(context);
 
     return SizedBox(
       width: 138,
