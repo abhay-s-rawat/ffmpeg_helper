@@ -17,16 +17,9 @@ class FFMpegHelper {
   FFMpegHelper._internal();
   static FFMpegHelper get instance => _singleton;
 
-  String _ffmpegUrl =
-      "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
   String? _tempFolderPath;
   String? _ffmpegBinDirectory;
   String? _ffmpegInstallationPath;
-
-  /// FFMpeg URL setter for version control
-  set ffmpegUrl(String url) {
-    _ffmpegUrl = url;
-  }
 
   Future<void> initialize() async {
     if (Platform.isWindows) {
@@ -399,6 +392,8 @@ class FFMpegHelper {
     CancelToken? cancelToken,
     void Function(FFMpegProgress progress)? onProgress,
     Map<String, dynamic>? queryParameters,
+    String ffmpegDownloadUrl =
+        "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip",
   }) async {
     if (Platform.isWindows) {
       if ((_ffmpegBinDirectory == null) || (_tempFolderPath == null)) {
@@ -418,7 +413,7 @@ class FFMpegHelper {
         try {
           Dio dio = Dio();
           Response response = await dio.download(
-            _ffmpegUrl,
+            ffmpegDownloadUrl,
             ffmpegZipPath,
             cancelToken: cancelToken,
             onReceiveProgress: (int received, int total) {

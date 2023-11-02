@@ -115,10 +115,6 @@ Future<void> downloadFFMpeg() async {
       bool present = await ffmpeg.isFFMpegPresent();
       
       if (!present) {
-        // Optional if you want a specific version
-        // ffmpeg releases: https://github.com/BtbN/FFmpeg-Builds/releases
-        ffmpeg.ffmpegUrl = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
-
         bool success = await ffmpeg.setupFFMpegOnWindows(
           onProgress: (FFMpegProgress progress) {
             downloadProgress.value = progress;
