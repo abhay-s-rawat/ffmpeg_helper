@@ -110,13 +110,20 @@ depends on linux distro
 ```dart
 Future<void> downloadFFMpeg() async {
     if (Platform.isWindows) {
-      bool success = await ffmpeg.setupFFMpegOnWindows(
-        onProgress: (FFMpegProgress progress) {
-          downloadProgress.value = progress;
-        },
-      );
+      FFMpegHelper ffmpeg = FFMpegHelper.instance;
+
+      bool present = await ffmpeg.isFFMpegPresent();
+      
+      if (!present) {
+        bool success = await ffmpeg.setupFFMpegOnWindows(
+          onProgress: (FFMpegProgress progress) {
+            downloadProgress.value = progress;
+          },
+        );
+      }
+
       setState(() {
-        ffmpegPresent = success;
+        ffmpegPresent = present;
       });
     } else if (Platform.isLinux) {
       // show dialog box
