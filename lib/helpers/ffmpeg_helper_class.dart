@@ -24,14 +24,18 @@ class FFMpegHelper {
   String? _ffmpegBinDirectory;
   String? _ffmpegInstallationPath;
 
-  Future<void> initialize() async {
+  Future<void> initialize({
+    Directory? ffmpegBaseDir,
+  }) async {
     if (Platform.isWindows) {
       PackageInfo packageInfo = await PackageInfo.fromPlatform();
       String appName = packageInfo.appName;
       Directory tempDir = await getTemporaryDirectory();
       _tempFolderPath = path.join(tempDir.path, "ffmpeg");
-      Directory appDocDir = await getApplicationDocumentsDirectory();
-      _ffmpegInstallationPath = path.join(appDocDir.path, appName, "ffmpeg");
+      Directory ffmpegInstallDir =
+          ffmpegBaseDir ?? await getApplicationDocumentsDirectory();
+      _ffmpegInstallationPath =
+          path.join(ffmpegInstallDir.path, appName, "ffmpeg");
       _ffmpegBinDirectory = path.join(
           _ffmpegInstallationPath!, "ffmpeg-master-latest-win64-gpl", "bin");
     }
