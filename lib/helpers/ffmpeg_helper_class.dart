@@ -13,13 +13,13 @@ import '../ffmpeg_helper.dart';
 
 class FFMpegHelper {
   static final FFMpegHelper _singleton = FFMpegHelper._internal();
+
   factory FFMpegHelper() => _singleton;
+
   FFMpegHelper._internal();
+
   static FFMpegHelper get instance => _singleton;
 
-  //
-  final String _ffmpegUrl =
-      "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip";
   String? _tempFolderPath;
   String? _ffmpegBinDirectory;
   String? _ffmpegInstallationPath;
@@ -338,6 +338,8 @@ class FFMpegHelper {
     Function(Statistics statistics)? statisticsCallback,
     Function(File? outputFile)? onComplete,
   }) async {
+    videoPath = escapeFilePath(videoPath);
+    outputPath = escapeFilePath(outputPath);
     int quality = 1;
     if ((qualityPercentage > 0) && (qualityPercentage < 100)) {
       quality = (((100 - qualityPercentage) * 31) / 100).ceil();
@@ -362,6 +364,16 @@ class FFMpegHelper {
     return session;
   }
 
+  String escapeFilePath(String filePath) {
+    // Workaround for https://github.com/arthenica/ffmpeg-kit/issues/960 while keeping compatibility with Windows
+    if (!Platform.isWindows) {
+      if (filePath.contains(" ") && !filePath.startsWith("\"")) {
+        return "\"$filePath\"";
+      }
+    }
+    return filePath;
+  }
+
   Future<File?> getThumbnailFileSync({
     required String videoPath,
     required Duration fromDuration,
@@ -372,6 +384,8 @@ class FFMpegHelper {
     Function(Statistics statistics)? statisticsCallback,
     Function(File? outputFile)? onComplete,
   }) async {
+    videoPath = escapeFilePath(videoPath);
+    outputPath = escapeFilePath(outputPath);
     int quality = 1;
     if ((qualityPercentage > 0) && (qualityPercentage < 100)) {
       quality = (((100 - qualityPercentage) * 31) / 100).ceil();
@@ -399,6 +413,8 @@ class FFMpegHelper {
     CancelToken? cancelToken,
     void Function(FFMpegProgress progress)? onProgress,
     Map<String, dynamic>? queryParameters,
+    String ffmpegDownloadUrl =
+        "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip",
   }) async {
     if (Platform.isWindows) {
       if ((_ffmpegBinDirectory == null) || (_tempFolderPath == null)) {
@@ -418,7 +434,7 @@ class FFMpegHelper {
         try {
           Dio dio = Dio();
           Response response = await dio.download(
-            _ffmpegUrl,
+            ffmpegDownloadUrl,
             ffmpegZipPath,
             cancelToken: cancelToken,
             onReceiveProgress: (int received, int total) {
